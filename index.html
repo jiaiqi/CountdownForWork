@@ -1,0 +1,264 @@
+<!--
+ * @Author: jiaqi
+ * @Date: 2021-07-01 16:24:39
+ * @LastEditTime: 2022-08-30 18:59:23
+ * @LastEditors: Please set LastEditors
+ * @Description: In User Settings Edit!
+ * @FilePath: \offWork\index.html
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🦑</title>
+</head>
+
+<body>
+  <div id="app">
+    <div class="text1"></div>
+    <div class="text2"></div>
+    <img src="./static/全屏.png" alt="" srcset="" class="icon show" id="fullScreen" />
+    <img src="./static/最小化.png" alt="" srcset="" class="icon" id="exitFullScreen" />
+  </div>
+</body>
+
+</html>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+  }
+
+  .icon {
+    width: 50px;
+    height: 50px;
+    position: fixed;
+    right: 20px;
+    top: 20px;
+    display: none;
+  }
+
+  .icon.show {
+    display: inline-block;
+  }
+
+  #app {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100vw;
+    font-size: 60px;
+    font-weight: bold;
+    background-color: #000;
+    color: #fff;
+  }
+
+  @keyframes blink {
+    0% {
+      opacity: 1;
+    }
+
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes changeshadow {
+    0% {
+      text-shadow: 0 0 10px #4cc134;
+      color: #4cc134;
+    }
+
+    15% {
+      text-shadow: 0 0 50px #4cc134;
+    }
+
+    30% {
+      text-shadow: 0 0 50px #4cc134;
+    }
+
+    45% {
+      text-shadow: 0 0 50px #e1ff35;
+      color: #e1ff35;
+    }
+
+    60% {
+      text-shadow: 0 0 50px #ff3535;
+      color: #ff3535;
+
+    }
+
+    75% {
+      text-shadow: 0 0 50px #ff3535;
+      color: #ff3535;
+
+    }
+
+    90% {
+      text-shadow: 0 0 50px #4cc134;
+      color: #4cc134;
+    }
+
+    100% {
+      text-shadow: 0 0 30px #4cc134;
+      color: #4cc134;
+    }
+  }
+
+  .text1 {
+    animation: changeshadow 3s linear infinite;
+    margin-bottom: 20px;
+  }
+</style>
+<script>
+
+  document.querySelector("#fullScreen").addEventListener('click', () => {
+    document.querySelector("#fullScreen").classList.remove('show')
+    document.querySelector("#exitFullScreen").classList.add('show')
+    launchFullScreen()
+
+  })
+
+  document.querySelector("#exitFullScreen").addEventListener('click', () => {
+    document.querySelector("#exitFullScreen").classList.remove('show')
+    document.querySelector("#fullScreen").classList.add('show')
+    exitFullscreen()
+
+  })
+  /**
+   * selector 元素类名、标签名、id
+   * end 下班时间
+   * autoUpdate 是否自动刷新
+   * **/
+
+  function showTime(selector, end = 19, autoUpdate = false) {
+    const getDateObj = (date) => {
+      if (!date) {
+        date = new Date()
+      } else {
+        date = new Date(date)
+      }
+
+      return {
+        Y: date.getFullYear(),
+        M: date.getMonth() + 1,
+        D: date.getDate(),
+        H: date.getHours(),
+        m: date.getMinutes(),
+        s: date.getSeconds()
+      }
+    }
+
+    const formatSeconds = (seconds = 0) => {
+      let h = parseInt(seconds / 3600)
+      let m = parseInt(seconds / 60) % 60
+      let s = seconds % 60
+      return { h, m, s }
+    }
+
+    const getOffWorkTime = (end = 19) => {
+      const now = getDateObj()
+      const start = `${now.Y}/${now.M}/${now.D} ${now.H}:${now.m}:${now.s}`
+      const endTime = `${now.Y}/${now.M}/${now.D} ${end}:00:00`
+      const diff = (new Date(endTime) - new Date(start)) / 1000
+      const result = formatSeconds(diff)
+      return result
+    }
+
+    let obj = getOffWorkTime(end)
+    let element = ''
+    if (selector) {
+      element = document.querySelector(selector)
+    } else {
+      element = document.body
+    }
+    if (element) {
+      element.innerText = `距离下班还有${obj.h}小时${obj.m}分钟${obj.s}秒`
+      if (autoUpdate) {
+        var timer = setInterval(() => {
+          let obj = getOffWorkTime()
+          element.innerText = `距离下班还有${obj.h}小时${obj.m}分钟${obj.s}秒`
+
+          if ([0, 15, 30, 45, 60].includes(obj.m) && obj.s == 0) {
+            const title = document.title
+            document.title = element.innerText
+            setTimeout(() => {
+              document.title = title
+            }, 3000);
+            if (window.Notification.permission == "granted") { // 判断是否有权限
+              sendNotification(element.innerText);
+            } else if (window.Notification.permission != "denied") {
+              window.Notification.requestPermission(function (permission) { // 没有权限发起请求
+                sendNotification(element.innerText);
+              });
+            }
+
+          }
+
+          if (obj.h > 19) {
+            element.innerText = `下班啦！不要忘记打卡哟`
+            clearInterval(timer)
+          }
+
+        }, 1000);
+      }
+    }
+
+  }
+
+  showTime('.text1', 19, true)
+
+
+
+  function sendNotification(text) {
+    new Notification("下班倒计时：", {
+      body: `${text}`,
+      icon: './static/R-C.gif'
+    })
+  }
+
+
+
+  function launchFullScreen() {
+    const element = document.querySelector('#app')
+    if (element.requestFullscreen) {
+
+      element.requestFullscreen();
+
+    } else if (element.mozRequestFullScreen) {
+
+      element.mozRequestFullScreen();
+
+    } else if (element.webkitRequestFullscreen) {
+
+      element.webkitRequestFullscreen();
+
+    } else if (element.msRequestFullscreen) {
+
+      element.msRequestFullscreen();
+
+    }
+
+  }
+
+  function exitFullscreen() {
+
+    if (document.exitFullscreen) {
+
+      document.exitFullscreen();
+
+    } else if (document.mozCancelFullScreen) {
+
+      document.mozCancelFullScreen();
+
+    } else if (document.webkitExitFullscreen) {
+
+      document.webkitExitFullscreen();
+
+    }
+  }
+</script>
